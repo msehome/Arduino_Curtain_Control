@@ -22,8 +22,10 @@
 #define CURRENT_SEN_1 A2
 
 #define EN_PIN_1 A0
-
+#define PHOTOCELL_PIN A2
 #define MOTOR_1 0
+
+int sensorValue = 0;
 
 short usSpeed_up = 255;  //default motor speed up
 short usSpeed_down = 105;  //default motor speed down
@@ -166,7 +168,11 @@ int ping_down()
 void loop() {
   
   digitalWrite(EN_PIN_1, HIGH);
-  /*Serial.print("Down");
+  sensorValue = analogRead(PHOTOCELL_PIN);
+  Serial.print("Photocell value");
+  Serial.println(sensorValue);
+  /*Serial.println("motoGo Stop");
+  Serial.print("Down");
   Serial.println(ping_down());
   Serial.print("Up");
   Serial.println(ping_up());*/
@@ -188,11 +194,12 @@ void loop() {
       upTimer++;
   }
     
-  if (is_going_down)
+  else if (is_going_down)
   {
       if (ping_down() == 0 || overcurrent() || downTimer >= 112)
       {
           digitalWrite(LED_BUILTIN, LOW);
+          delay(200);
           Stop();
           Serial.println(ping_down());
           Serial.println("Arrived to the bottom");  
@@ -204,6 +211,44 @@ void loop() {
         Serial.println("Is going down...");
       }
       downTimer++;
+  }
+  else 
+  {
+    if (sensorValue < 300)
+    {
+      upTimer = 0;
+        if (ping_up() == 1)
+        {
+          digitalWrite(LED_BUILTIN, LOW);
+          Stop();
+          Serial.println("Arrived to the top");
+        }
+        else
+        {
+          digitalWrite(LED_BUILTIN, HIGH);
+          motorGo(UP,usSpeed_up);
+          is_going_up = true;
+        }
+    }
+    else if (sensorValue > 650)
+    {
+       downTimer = 0;
+        if (ping_down() == 0)
+        {
+          delay(10);
+          digitalWrite(LED_BUILTIN, LOW);
+          Stop();
+          Serial.println(ping_down());
+          Serial.println("Arrived to the bottom");
+        }
+        else
+        {
+          digitalWrite(LED_BUILTIN, HIGH);
+          motorGo(DOWN,usSpeed_down);
+          is_going_down = true;
+        }
+    }
+    
   }
     
   if (mySwitch.available()) {
